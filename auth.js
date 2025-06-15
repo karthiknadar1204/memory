@@ -1,5 +1,6 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
+import { updateUserDetails } from "./lib/actions"
  
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -16,11 +17,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, account }) {
+    async jwt({ token, account, user }) {
       // Initial sign in
-      if (account) {
+      if (account && user) {
         console.log('Access Token:', account.access_token)
         console.log('Refresh Token:', account.refresh_token)
+        
+        // Update user details in database
+        await updateUserDetails({
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          accessToken: account.access_token,
+          refreshToken: account.refresh_token
+        })
+
         return {
           ...token,
           accessToken: account.access_token,
